@@ -10,6 +10,8 @@ import Container from 'react-bootstrap/Container'
 import Row from 'react-bootstrap/Row'
 import Col from 'react-bootstrap/Col'
 import ListGroup from 'react-bootstrap/ListGroup'
+import Spinner from 'react-bootstrap/Spinner'
+import Alert from 'react-bootstrap/Alert'
 // degli import così selettivi, se eseguiti come prassi, renderanno
 // il bundle della vostra applicazione più leggero nel momento in cui
 // la dovrete deployare online
@@ -21,6 +23,19 @@ import ListGroup from 'react-bootstrap/ListGroup'
 // se il vostro componente necessita di recuperare una risorsa esterna,
 // createlo come CLASSE
 
+// PASSAGGI IN CORSO:
+// 1) lo stato viene inizializzato con un array reservations vuoto
+// 2) render() viene invocato per la prima volta, essendo già collegato
+// allo stato ma non avendo elementi da mostrare al momento, renderizzerà
+// solamente le parti STATICHE dell'interfaccia (titolo, struttura di BS etc.)
+// 3) finito il primo render, parte (se presente) componentDidMount
+// 4) componentDidMount esegue la funzione di fetch() e recupera i dati.
+// finito il recupero, i dati vengono inseriti nello stato con un setState
+// 5) a causa del setState e del cambiamento di stato, render() viene invocato
+// una seconda volta: le parti statiche sono le stesse di prima, ma il contenuto
+// della lista questa volta è diverso e questa seconda invocazione si
+// occuperà di popolarla con i nuovi list items
+
 class ReservationList extends Component {
   state = {
     reservations: [],
@@ -28,6 +43,8 @@ class ReservationList extends Component {
     // in quanto rispecchia il tipo di dato che andremo a recuperare
     // e fa in modo che un eventuale .map() nel JSX semplicemente
     // non renderizzi alcun elemento dinamico
+    loading: true,
+    error: false,
   }
 
   // quindi quello che ci servirebbe sarebbe un modo per effettuare
@@ -63,15 +80,27 @@ class ReservationList extends Component {
         let data = await response.json()
         console.log(data)
         // salvare nello state il nostro array data
-        this.setState({
-          reservations: data,
-        })
+        setTimeout(() => {
+          this.setState({
+            // reservations: [], // simuliamo un database vuoto
+            reservations: data,
+            loading: false,
+          })
+        }, 500)
         // ogni volta che cambia lo stato, render() viene invocato di nuovo
       } else {
-        alert('something went wrong')
+        // alert('something went wrong')
+        this.setState({
+          loading: false,
+          error: true,
+        })
       }
     } catch (error) {
       console.log(error)
+      this.setState({
+        loading: false,
+        error: true,
+      })
     }
   }
 
@@ -88,7 +117,25 @@ class ReservationList extends Component {
           <Col xs={12} md={6}>
             <h2 className="text-center my-4">Attuali prenotazioni:</h2>
             {/* qua inseriamo la lista dinamica */}
+            <div className="text-center">
+              {this.state.error && (
+                <Alert variant="danger">
+                  Errore nel recupero delle prenotazioni :(
+                </Alert>
+              )}
+              {/* render condizionale dello Spinner */}
+              {this.state.loading && ( // short-circuit operator
+                <Spinner animation="border" variant="success" />
+              )}
+            </div>
             <ListGroup>
+              {this.state.reservations.length === 0 &&
+                !this.state.loading &&
+                !this.state.error && (
+                  <ListGroup.Item>
+                    Non esistono al momento prenotazioni
+                  </ListGroup.Item>
+                )}
               {this.state.reservations.map((reservation) => (
                 <ListGroup.Item key={reservation._id}>
                   {reservation.name} per {reservation.numberOfPeople} -{' '}
