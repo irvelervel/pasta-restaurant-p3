@@ -16,6 +16,8 @@ import Alert from 'react-bootstrap/Alert'
 // il bundle della vostra applicazione più leggero nel momento in cui
 // la dovrete deployare online
 
+import { parseISO, format } from 'date-fns'
+
 // recuperare una risorsa può richiedere del tempo, anche svariati secondi
 // un'applicazione moderna presenta all'utente le parti statiche IMMEDIATAMENTE,
 // mostrando un indicatore di caricamento per addolcire l'attesa del contenuto dinamico
@@ -71,11 +73,22 @@ class ReservationList extends Component {
   fetchReservations = async () => {
     try {
       let response = await fetch(
-        'https://striveschool-api.herokuapp.com/api/reservation',
+        'https://striveschool-api.herokuapp.com/api/comments/',
         {
-          method: 'GET',
+          method: 'POST',
+          body: JSON.stringify({
+            comment:
+              "A good book but definitely I don't like many parts of the plot",
+            rate: '3',
+            elementId: '0316438960',
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization:
+              'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MzEwOGU4MWVkZDY3ODAwMTUwN2Q3MzQiLCJpYXQiOjE2NjIwMjk0NDEsImV4cCI6MTY2MzIzOTA0MX0.V3BZhbimXxKJnE2_CHALYYWFMGvvzYXBcX7sjT60dK4',
+          },
         }
-      ) // GET
+      )
       if (response.ok) {
         let data = await response.json()
         console.log(data)
@@ -139,7 +152,18 @@ class ReservationList extends Component {
               {this.state.reservations.map((reservation) => (
                 <ListGroup.Item key={reservation._id}>
                   {reservation.name} per {reservation.numberOfPeople} -{' '}
-                  {reservation.dateTime}
+                  {/* voglio trasformare la proprietà dateTime della prenotazione in qualcosa di più leggibile*/}
+                  {/* useremo date-fns, servono due passaggi: 
+                    1) trasformare la stringa dateTime in un oggetto Date
+                    2) formattare questo oggetto Date in un qualcosa di più leggibile
+                  */}
+                  {
+                    // 2)
+                    format(
+                      parseISO(reservation.dateTime), // 1)
+                      'd MMMM yyyy - HH:mm'
+                    )
+                  }
                 </ListGroup.Item>
               ))}
             </ListGroup>
